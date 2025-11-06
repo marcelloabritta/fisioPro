@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import imgTest from "../../../../../../public/foto1.png";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import imgTest from "../../../../../../public/foto1.png";
 
 export function ProfileContent() {
   const [selectedHours, setSelectedHours] = useState<string[]>([]);
@@ -58,6 +58,17 @@ export function ProfileContent() {
   function toggleHour(hour: string) {
     setSelectedHours((prev) => prev.includes(hour)? prev.filter(h => h !== hour): [...prev, hour].sort())
   }
+
+  const timeZones = Intl.supportedValuesOf("timeZone").filter((zone) => 
+    zone.startsWith("America/Sao_Paulo") ||
+    zone.startsWith("America/Fortaleza") ||
+    zone.startsWith("America/Recife") ||
+    zone.startsWith("America/Bahia") ||
+    zone.startsWith("America/Belem") ||
+    zone.startsWith("America/Manaus") ||
+    zone.startsWith("America/Cuiaba") ||
+    zone.startsWith("America/Boa_Vista") 
+  );
 
   return (
     <div className="mx-auto">
@@ -150,7 +161,7 @@ export function ProfileContent() {
                           onValueChange={field.onChange}
                           defaultValue={field.value ? "active" : "inactive"}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione o status da clínica" />
                           </SelectTrigger>
                           <SelectContent>
@@ -213,6 +224,47 @@ export function ProfileContent() {
                     </DialogContent>
                   </Dialog>
                 </div>
+
+                
+
+                <FormField    
+                  control={form.control}
+                  name="timeZone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">
+                        Selecione o fuso horário
+                      </FormLabel>
+                      <FormControl>
+
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione seu fuso horário" />
+                          </SelectTrigger>
+                            <SelectContent>
+                              {timeZones.map((zone) => (
+                                <SelectItem key={zone} value={zone}>
+                                  {zone}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Salvar alterações
+                </Button>
+
               </div>
             </CardContent>
           </Card>
