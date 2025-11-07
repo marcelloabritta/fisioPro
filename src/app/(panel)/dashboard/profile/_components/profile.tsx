@@ -7,7 +7,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useProfileForm } from "./profile-form";
+import { ProfileFormData, useProfileForm } from "./profile-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
@@ -32,12 +32,29 @@ import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import imgTest from "../../../../../../public/foto1.png";
+import { Prisma } from "@prisma/client";
 
-export function ProfileContent() {
-  const [selectedHours, setSelectedHours] = useState<string[]>([]);
+type UserWithSubscription = Prisma.UserGetPayload<{
+  include: {
+    subscription: true;
+  }
+}>
+
+interface ProfileContentProps {
+  user: UserWithSubscription;
+}
+
+export function ProfileContent({ user }: ProfileContentProps) {
+  const [selectedHours, setSelectedHours] = useState<string[]>(user.times ?? []);
   const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
-  const form = useProfileForm();
+  const form = useProfileForm({
+    name: user.name,
+    address: user.address,
+    phone: user.phone,
+    status: user.status,
+    timeZone: user.timeZone
+  });
 
   function generateTimeSlots(): string[] {
     const hours: string[] = [];
@@ -70,10 +87,19 @@ export function ProfileContent() {
     zone.startsWith("America/Boa_Vista") 
   );
 
+  async function onSubmit(values: ProfileFormData) {
+
+    const profileData = {
+      ...values,
+      times: selectedHours
+    }
+
+  }
+
   return (
     <div className="mx-auto">
       <Form {...form}>
-        <form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
               <CardTitle>Minha Clínica</CardTitle>
