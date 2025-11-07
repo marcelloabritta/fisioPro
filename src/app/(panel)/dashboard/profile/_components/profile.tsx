@@ -33,6 +33,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import imgTest from "../../../../../../public/foto1.png";
 import { Prisma } from "@prisma/client";
+import { updateProfile } from "../_actions/update-profile";
 
 type UserWithSubscription = Prisma.UserGetPayload<{
   include: {
@@ -89,10 +90,14 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
   async function onSubmit(values: ProfileFormData) {
 
-    const profileData = {
-      ...values,
-      times: selectedHours
-    }
+    const response = await updateProfile({
+      name: values.name,
+      address: values.address,
+      phone: values.phone,
+      status: values.status === 'active'? true : false,
+      timeZone: values.timeZone,
+      times: selectedHours || []
+    });
 
   }
 
@@ -108,7 +113,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <div className="flex justify-center">
                 <div className="bg-gray-200 relative h-40 w-40 rounded-full overflow-hidden">
                   <Image
-                    src={imgTest}
+                    src={user.image? user.image : imgTest}
                     alt="Foto da clínica"
                     fill
                     className="object-cover"
