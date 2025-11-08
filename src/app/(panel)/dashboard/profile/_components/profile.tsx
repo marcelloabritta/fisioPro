@@ -34,6 +34,8 @@ import { cn } from "@/lib/utils";
 import imgTest from "../../../../../../public/foto1.png";
 import { Prisma } from "@prisma/client";
 import { updateProfile } from "../_actions/update-profile";
+import { toast } from "sonner"
+import { formatPhone, extractPhoneNumber } from "@/utils/formatPhone"
 
 type UserWithSubscription = Prisma.UserGetPayload<{
   include: {
@@ -89,16 +91,23 @@ export function ProfileContent({ user }: ProfileContentProps) {
   );
 
   async function onSubmit(values: ProfileFormData) {
+    const extractValue = extractPhoneNumber(values.phone || "")
 
     const response = await updateProfile({
       name: values.name,
       address: values.address,
-      phone: values.phone,
+      phone: extractValue,
       status: values.status === 'active'? true : false,
       timeZone: values.timeZone,
       times: selectedHours || []
     });
 
+    if(response.error) {
+      toast.error(response.error)
+      return;
+    }
+    
+    toast.success(response.data)
   }
 
   return (
@@ -171,7 +180,11 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="Digite o telefone da clinica..."
+                          placeholder="(12) 34567-8910"
+                          onChange={(e) => {
+                            const formattedValue = formatPhone(e.target.value)
+                            field.onChange(formattedValue)
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
