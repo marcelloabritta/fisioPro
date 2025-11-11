@@ -1,37 +1,66 @@
-"use client"
-import { useState } from "react"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import { DialogService } from "./dialog-service";
+import { Service } from "@prisma/client";
+import { formatCurrency } from "@/utils/formatCurrency";
+interface ServicesListProps {
+  services: Service[];
+}
 
-export function ServicesList() {
+export function ServicesList({ services }: ServicesListProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <section className="mx-auto">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl md: text-2-xl font-bold">
+              Serviços
+            </CardTitle>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
 
-    return (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <section className="mx-auto">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-xl md: text-2-xl font-bold">Serviços</CardTitle>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="w-4 h-4"/>
-                            </Button>
-                        </DialogTrigger>
+            <DialogContent>
+              <DialogService
+                closeModal={() => {
+                  setIsDialogOpen(false);
+                }}
+              />
+            </DialogContent>
+          </CardHeader>
 
-                        <DialogContent>
-                            <DialogService 
-                            closeModal={() => {
-                                setIsDialogOpen(false);
-                            }}
-                            />
-                        </DialogContent>
-                    </CardHeader>
-                </Card>
+          <CardContent>
+            <section className="space-y-4">
+              {services.map((service) => (
+                <article key={service.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{service.name}</span>
+                    <span className="text-gray-500">-</span>
+                    <span className="text-gray-600">{formatCurrency(service.price / 100)}</span>
+                  </div>
+
+                  <div>
+                    <Button variant="ghost" size="icon" onCLick={() => { }}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onCLick={() => { }}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </article>
+              ))}
             </section>
-        </Dialog>
-    )
-} 
+          </CardContent>
+        </Card>
+      </section>
+    </Dialog>
+  );
+}
