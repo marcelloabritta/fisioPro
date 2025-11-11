@@ -9,7 +9,7 @@ const formSchema = z.object({
     minutes: z.string(),
 })
 
-export interface UseDialogServiceFormPros {
+export interface UseDialogServiceFormProps {
     initialValues?: {
         name: string;
         price: string;
