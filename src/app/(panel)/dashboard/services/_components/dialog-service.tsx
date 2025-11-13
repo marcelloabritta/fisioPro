@@ -6,7 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DialogServiceFormData, useDialogServiceForm } from "./dialog-service-form";
+import {
+  DialogServiceFormData,
+  useDialogServiceForm,
+} from "./dialog-service-form";
 import {
   Form,
   FormControl,
@@ -18,15 +21,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { convertRealToCents } from "@/utils/convertCurrency";
-import { CreateNewService } from "../_actions/create-service"
+import { CreateNewService } from "../_actions/create-service";
 import { toast } from "sonner";
+import { UpdateService } from "../_actions/update-service";
 
-interface DialogServiceProps{
+interface DialogServiceProps {
   closeModal: () => void;
+  serviceId?: string;
+  initialValues?: {
+    name: string;
+    price: string;
+    hours: string;
+    minutes: string;
+  };
 }
 
-export function DialogService({ closeModal } : DialogServiceProps) {
-  const form = useDialogServiceForm();
+export function DialogService({
+  closeModal,
+  initialValues,
+  serviceId,
+}: DialogServiceProps) {
+  const form = useDialogServiceForm({ initialValues: initialValues });
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(values: DialogServiceFormData) {
@@ -35,22 +50,62 @@ export function DialogService({ closeModal } : DialogServiceProps) {
     const hours = parseInt(values.hours) || 0;
     const minutes = parseInt(values.minutes) || 0;
 
-    const duration = (hours * 60) + minutes;
+    const duration = hours * 60 + minutes;
+
+    if(serviceId){
+      await EditServiceById({
+        serviceId: serviceId,
+        name: values.name,
+        priceInCents: priceInCents,
+        duration: duration
+      })
+
+      return;
+    }
 
     const response = await CreateNewService({
       name: values.name,
+      price: priceInCents,
+      duration: duration,
+    });
+
+    setLoading(false);
+
+    if (response.error) {
+      toast.error(response.error);
+      return;
+    }
+
+    toast.success("Serviço cadastrado com sucesso");
+    handleCloseModal();
+  }
+
+  async function EditServiceById({
+    serviceId,
+    name,
+    priceInCents,
+    duration,
+  }: {
+    serviceId: string;
+    name: string;
+    priceInCents: number;
+    duration: number;
+  }) {
+    const response = await UpdateService({
+      serviceId: serviceId,
+      name: name,
       price: priceInCents,
       duration: duration
     })
 
     setLoading(false);
     
-    if(response.error) {
+    if(response.error){
       toast.error(response.error)
       return;
     }
-
-    toast.success("Serviço cadastrado com sucesso")
+    
+    toast.success(response.data)
     handleCloseModal();
   }
 
@@ -61,31 +116,31 @@ export function DialogService({ closeModal } : DialogServiceProps) {
 
   function changeCurrency(event: React.ChangeEvent<HTMLInputElement>) {
     let { value } = event.target;
-    value = value.replace(/\D/g, '');
+    value = value.replace(/\D/g, "");
 
-    if(value) {
-        value = (parseInt(value, 10) / 100).toFixed(2);
-        value = value.replace('.', ',');
-        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (value) {
+      value = (parseInt(value, 10) / 100).toFixed(2);
+      value = value.replace(".", ",");
+      value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
 
     event.target.value = value;
     form.setValue("price", value);
   }
 
-
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Novo Serviço</DialogTitle>
-        <DialogDescription>Adicione um novo serviço</DialogDescription>
+        <DialogTitle>
+          {serviceId ? "Editar Serviço" : "Novo Serviço"}
+        </DialogTitle>
+        <DialogDescription>
+          {serviceId ? "Edite o serviço" : "Adicione um novo serviço"}
+        </DialogDescription>
       </DialogHeader>
 
       <Form {...form}>
-        <form 
-        className="space-y-2"
-        onSubmit={form.handleSubmit(onSubmit)}
-        >
+        <form className="space-y-2" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="flex flex-col">
             <FormField
               control={form.control}
@@ -115,7 +170,11 @@ export function DialogService({ closeModal } : DialogServiceProps) {
                     Valor do serviço:
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Ex: 120,00" onChange={changeCurrency}/>
+                    <Input
+                      {...field}
+                      placeholder="Ex: 120,00"
+                      onChange={changeCurrency}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,16 +189,9 @@ export function DialogService({ closeModal } : DialogServiceProps) {
               name="hours"
               render={({ field }) => (
                 <FormItem className="my-2">
-                  <FormLabel className="font-semibold">
-                    Horas:
-                  </FormLabel>
+                  <FormLabel className="font-semibold">Horas:</FormLabel>
                   <FormControl>
-                    <Input 
-                    {...field} 
-                    placeholder="1" 
-                    min="0"
-                    type="number"
-                    />
+                    <Input {...field} placeholder="1" min="0" type="number" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,16 +203,9 @@ export function DialogService({ closeModal } : DialogServiceProps) {
               name="minutes"
               render={({ field }) => (
                 <FormItem className="my-2">
-                  <FormLabel className="font-semibold">
-                    Minutos:
-                  </FormLabel>
+                  <FormLabel className="font-semibold">Minutos:</FormLabel>
                   <FormControl>
-                    <Input 
-                    {...field} 
-                    placeholder="0" 
-                    min="0"
-                    type="number"
-                    />
+                    <Input {...field} placeholder="0" min="0" type="number" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -168,12 +213,14 @@ export function DialogService({ closeModal } : DialogServiceProps) {
             />
           </div>
 
-          <Button 
-          type="submit" 
-          className="w-full font-semibold text-white" 
-          disabled={loading}
+          <Button
+            type="submit"
+            className="w-full font-semibold text-white"
+            disabled={loading}
           >
-              {loading? "Cadastrando..." : "Adicionar serviço"}
+            {loading
+              ? "Carregando..."
+              : `${serviceId ? "Atualizar Serviço" : "Cadastrar serviço"}`}
           </Button>
         </form>
       </Form>
